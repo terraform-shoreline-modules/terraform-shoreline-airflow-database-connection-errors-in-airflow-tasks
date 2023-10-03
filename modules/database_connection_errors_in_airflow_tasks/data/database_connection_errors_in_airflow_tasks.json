@@ -1,0 +1,134 @@
+{
+  "name": "database_connection_errors_in_airflow_tasks",
+  "description": "This incident type refers to situations where Airflow tasks are unable to connect to the database due to errors. These errors may result from a variety of causes such as network issues, database configuration issues, or system overload. When such errors occur, the affected tasks may fail to complete successfully, leading to disruptions in the workflow.",
+  "params": [
+    {
+      "name": "AIRFLOW_TASK_FILE",
+      "value": ""
+    },
+    {
+      "name": "AIRFLOW_CONFIG_FILE",
+      "value": ""
+    },
+    {
+      "name": "DATABASE_SERVICE_NAME",
+      "value": ""
+    },
+    {
+      "name": "DATABASE_USER",
+      "value": ""
+    },
+    {
+      "name": "DATABASE_HOST",
+      "value": ""
+    },
+    {
+      "name": "DATABASE_PORT",
+      "value": ""
+    },
+    {
+      "name": "HOST_NAME",
+      "value": ""
+    },
+    {
+      "name": "K8S_CLUSTER_NAME",
+      "value": ""
+    },
+    {
+      "name": "NAMESPACE",
+      "value": ""
+    }
+  ],
+  "cells": [
+    {
+      "name": "cell_1",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Database connection errors in Airflow tasks.\nThis incident type refers to situations where Airflow tasks are unable to connect to the database due to errors. These errors may result from a variety of causes such as network issues, database configuration issues, or system overload. When such errors occur, the affected tasks may fail to complete successfully, leading to disruptions in the workflow."
+    },
+    {
+      "name": "cell_2",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check if the database is running"
+    },
+    {
+      "name": "cell_3",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `systemctl status ${DATABASE_SERVICE_NAME}`"
+    },
+    {
+      "name": "cell_4",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check if the database credentials are correct"
+    },
+    {
+      "name": "cell_5",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `cat ${AIRFLOW_CONFIG_FILE} | grep -E \"sql_alchemy_conn\"`"
+    },
+    {
+      "name": "cell_6",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check if the database is accepting connections"
+    },
+    {
+      "name": "cell_7",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `nc -zv ${DATABASE_HOST} ${DATABASE_PORT}`"
+    },
+    {
+      "name": "cell_8",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check if the database user has sufficient privileges"
+    },
+    {
+      "name": "cell_9",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `psql -h ${DATABASE_HOST} -p ${DATABASE_PORT} -U ${DATABASE_USER} -c \"SELECT 1\"`"
+    },
+    {
+      "name": "cell_10",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check if the Airflow task is using the correct database connection"
+    },
+    {
+      "name": "cell_11",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `cat ${AIRFLOW_TASK_FILE} | grep -E \"sql_alchemy_conn\"`"
+    },
+    {
+      "name": "cell_12",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Concurrent database connections limit exceeded."
+    },
+    {
+      "name": "cell_13",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "host | host_name=$HOST_NAME | invoke_max_conn()"
+    },
+    {
+      "name": "cell_14",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check if the database server is up and running. If the server is down, bring it back online as soon as possible."
+    },
+    {
+      "name": "cell_15",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "host | host_name=$HOST_NAME | invoke_check_db_server($DATABASE_SERVICE_NAME)"
+    }
+  ]
+}
